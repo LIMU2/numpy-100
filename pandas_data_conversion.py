@@ -56,3 +56,41 @@ MID = interval.mid
 plt.plot(MID, y)
 plt.show()
 cats = pd.qcut(data, 4)  # 切成四份，由于qcut基于样本分位数进行分箱，这样可以得到等长的箱
+
+# 检测和过滤异常值
+data = pd.DataFrame(np.random.randn(1000, 4))
+print(data.describe())
+# 找出一列中绝对值大于三的值
+col = data[2]
+print(col[np.abs(col) > 3])
+data[np.abs(data) > 3] = np.sign(data) * 3  # np.sign([-5., 4.5]) => array([-1.,  1.])
+
+# 置换和随机抽样
+# 在调用permutation时根据想要的轴长度可以产生一个表示新顺序的整数数组
+df = pd.DataFrame(np.arange(5 * 4).reshape((5, 4)))
+sampler = np.random.permutation(5)
+df.take(sampler)
+df.sample(n=1)  # 选出一行不含替代值（不重复选择）的随机子集
+
+# 计算指标/虚拟变量
+df = pd.DataFrame({'key': ['b', 'b', 'a', 'c', 'a', 'b'], 'data1': range(6)})
+print(pd.get_dummies(df['key']))
+mnames = ['movie_id', 'title', 'genres']
+movies = pd.read_table('movies.dat', sep='::', header=None, names=mnames, engine='python')
+all_genres = []
+for x in movies.genres:
+    all_genres.extend(x.split('|'))  # 按分隔符分割
+genres = pd.unique(all_genres)
+# 使用全0的dataframe是构建指标DataFrame的一种方式
+zero_matrix = np.zeros((len(movies), len(genres)))
+dummies = pd.DataFrame(zero_matrix, columns=genres)  # 列名是genres
+gen = movies.genres[0]
+print(gen.split('|'))
+dummies.columns.get_indexer(gen.split('|'))  # get_indexer 取索引
+for i, gen in enumerate(movies.genres):
+    print(i)  # 索引
+    print(gen)  # 值
+    indices = dummies.columns.get_indexer(gen.split('|'))
+    dummies.iloc[i, indices] = 1
+movies_windic = movies.join(dummies.add_prefix('Genre_'))
+print(movies_windic.iloc[0])
